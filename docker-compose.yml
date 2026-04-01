@@ -1,0 +1,30 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: haulage
+      POSTGRES_USER: haulage
+      POSTGRES_PASSWORD: haulage
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+  app:
+    build: .
+    depends_on:
+      - postgres
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/haulage
+      SPRING_DATASOURCE_USERNAME: haulage
+      SPRING_DATASOURCE_PASSWORD: haulage
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      JWT_SECRET: "replace-me-with-a-long-random-secret"
+      JWT_EXPIRATION_MS: "3600000"
+    ports:
+      - "8080:8080"
+
+volumes:
+  postgres-data:
+

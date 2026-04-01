@@ -1,0 +1,36 @@
+spring:
+  application:
+    name: haulage
+
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/haulage}
+    username: ${SPRING_DATASOURCE_USERNAME:haulage}
+    password: ${SPRING_DATASOURCE_PASSWORD:haulage}
+
+  jpa:
+    database-platform: ${SPRING_JPA_DATABASE_PLATFORM:org.hibernate.dialect.PostgreSQLDialect}
+    hibernate:
+      ddl-auto: ${SPRING_JPA_HIBERNATE_DDL_AUTO:${SPRING_HIBERNATE_DDL_AUTO:update}}
+    properties:
+      hibernate:
+        jdbc:
+          lob:
+            non_contextual_creation: true
+
+  jackson:
+    serialization:
+      write-enums-using-to-string: true
+    deserialization:
+      read-enums-using-to-string: true
+
+server:
+  port: ${SERVER_PORT:8080}
+
+jwt:
+  secret: ${JWT_SECRET:default-secret-change-this-to-a-long-random-string-32bytes-minimum}
+  expiration-ms: ${JWT_EXPIRATION_MS:3600000}
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+
