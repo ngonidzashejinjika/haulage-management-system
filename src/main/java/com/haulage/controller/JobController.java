@@ -1,7 +1,6 @@
 package com.haulage.controller;
 
 import com.haulage.domain.Job;
-import com.haulage.domain.enums.JobStatus;
 import com.haulage.dto.JobCreateRequest;
 import com.haulage.dto.JobResponse;
 import com.haulage.dto.JobStatusUpdateRequest;
@@ -30,8 +29,7 @@ public class JobController {
                 request.getDriverId(),
                 request.getPickupLocation(),
                 request.getDeliveryLocation(),
-                request.getCargoDescription()
-        );
+                request.getCargoDescription());
         return ResponseEntity.status(HttpStatus.CREATED).body(toResponse(job));
     }
 
@@ -65,8 +63,6 @@ public class JobController {
                 job.getCargoDescription(),
                 job.getStatus(),
                 job.getAssignedTruck().getTruckId(),
-                job.getAssignedDriver().getDriverId()
-        );
+                job.getAssignedDriver().getDriverId());
     }
 }
-

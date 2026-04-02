@@ -16,9 +16,6 @@ public class TruckUpdateRequest {
     @DecimalMin(value = "0.01", inclusive = true)
     private BigDecimal capacity;
 
-    @NotNull
-    private TruckStatus status;
-
     public TruckUpdateRequest() {
     }
 
@@ -35,15 +32,6 @@ public class TruckUpdateRequest {
     }
 
     public void setCapacity(BigDecimal capacity) {
-        this.capacity = capacity;
-    }
-
-    public TruckStatus getStatus() {
-        return status;
-    }
-
-    public void setStatus(TruckStatus status) {
-        this.status = status;
+        this.capacity = this.capacity;
     }
 }
-

@@ -13,17 +13,8 @@ import com.haulage.service.exceptions.NotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.EnumSet;
-import java.util.List;
-
 @Service
 public class JobService {
-
-    private static final EnumSet<JobStatus> ACTIVE_STATUSES = EnumSet.of(
-            JobStatus.PENDING,
-            JobStatus.ASSIGNED,
-            JobStatus.IN_TRANSIT
-    );
 
     private final JobRepository jobRepository;
     private final TruckRepository truckRepository;
@@ -32,10 +23,10 @@ public class JobService {
     private final DriverService driverService;
 
     public JobService(JobRepository jobRepository,
-                       TruckRepository truckRepository,
-                       DriverRepository driverRepository,
-                       TruckService truckService,
-                       DriverService driverService) {
+            TruckRepository truckRepository,
+            DriverRepository driverRepository,
+            TruckService truckService,
+            DriverService driverService) {
         this.jobRepository = jobRepository;
         this.truckRepository = truckRepository;
         this.driverRepository = driverRepository;
@@ -45,10 +36,10 @@ public class JobService {
 
     @Transactional
     public Job createJob(Long truckId,
-                           Long driverId,
-                           String pickupLocation,
-                           String deliveryLocation,
-                           String cargoDescription) {
+            Long driverId,
+            String pickupLocation,
+            String deliveryLocation,
+            String cargoDescription) {
 
         Truck truck = truckRepository.findById(truckId)
                 .orElseThrow(() -> new NotFoundException("Truck not found: " + truckId));
@@ -65,6 +56,10 @@ public class JobService {
         job.setStatus(JobStatus.ASSIGNED);
         job.setAssignedTruck(truck);
         job.setAssignedDriver(driver);
+
+        // When assigned to a job, truck is in use.
+        truck.setStatus(TruckStatus.IN_TRANSIT);
+        truckRepository.save(truck);
 
         return jobRepository.save(job);
     }
@@ -94,19 +89,21 @@ public class JobService {
         }
 
         switch (newStatus) {
-            case IN_TRANSIT -> {
-                if (truck.getStatus() == TruckStatus.UNDER_MAINTENANCE) {
-                    throw new BusinessRuleViolationException("Cannot move job to IN_TRANSIT while truck is UNDER_MAINTENANCE");
+            case PENDING -> {
+                // keep truck available unless it is under maintenance
+                if (truck.getStatus() != TruckStatus.UNDER_MAINTENANCE) {
+                    truck.setStatus(TruckStatus.AVAILABLE);
                 }
-                // If the truck is in another state, only allow transition into IN_TRANSIT from AVAILABLE.
-                if (truck.getStatus() != TruckStatus.AVAILABLE && truck.getStatus() != TruckStatus.IN_TRANSIT) {
-                    throw new BusinessRuleViolationException("Truck must be AVAILABLE to start IN_TRANSIT");
+            }
+            case ASSIGNED, IN_TRANSIT -> {
+                if (truck.getStatus() == TruckStatus.UNDER_MAINTENANCE) {
+                    throw new BusinessRuleViolationException(
+                            "Cannot assign or start in-transit job while truck is UNDER_MAINTENANCE");
                 }
                 truck.setStatus(TruckStatus.IN_TRANSIT);
             }
-            case DELIVERED, CANCELLED -> truck.setStatus(TruckStatus.AVAILABLE);
-            case PENDING, ASSIGNED -> {
-                // Keep truck available while the job isn't in transit.
+            case DELIVERED, CANCELLED -> {
+                // job is done or cancelled, truck becomes available
                 if (truck.getStatus() != TruckStatus.UNDER_MAINTENANCE) {
                     truck.setStatus(TruckStatus.AVAILABLE);
                 }
@@ -115,17 +112,25 @@ public class JobService {
 
         job.setStatus(newStatus);
 
-        // Persist both sides in one transaction (truck is the object referenced by the job).
+        // Persist both sides in one transaction (truck is the object referenced by the
+        // job).
         truckRepository.save(truck);
         return jobRepository.save(job);
     }
 
     @Transactional
     public void deleteJob(Long jobId) {
-        if (!jobRepository.existsById(jobId)) {
-            throw new NotFoundException("Job not found: " + jobId);
+        Job job = jobRepository.findById(jobId)
+                .orElseThrow(() -> new NotFoundException("Job not found: " + jobId));
+
+        if (job.getStatus() == JobStatus.ASSIGNED || job.getStatus() == JobStatus.IN_TRANSIT) {
+            Truck truck = job.getAssignedTruck();
+            if (truck != null && truck.getStatus() != TruckStatus.UNDER_MAINTENANCE) {
+                truck.setStatus(TruckStatus.AVAILABLE);
+                truckRepository.save(truck);
+            }
         }
+
         jobRepository.deleteById(jobId);
     }
 }
-

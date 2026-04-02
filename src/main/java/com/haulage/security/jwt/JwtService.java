@@ -49,17 +49,19 @@ public class JwtService {
 
     public String extractUsername(String token) {
         Claims claims = Jwts.parser()
-                .setSigningKey(signingKey)
-                .parseClaimsJws(token)
-                .getBody();
+                .verifyWith(signingKey)
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
         return claims.getSubject();
     }
 
     private boolean isTokenExpired(String token) {
         Date expiration = Jwts.parser()
-                .setSigningKey(signingKey)
-                .parseClaimsJws(token)
-                .getBody()
+                .verifyWith(signingKey)
+                .build()
+                .parseSignedClaims(token)
+                .getPayload()
                 .getExpiration();
 
         return expiration.before(new Date());

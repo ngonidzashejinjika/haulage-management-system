@@ -30,8 +30,7 @@ public class TruckController {
                     truck.getTruckId(),
                     truck.getRegistrationNumber(),
                     truck.getCapacity(),
-                    request.getStatus()
-            );
+                    request.getStatus());
         }
         return ResponseEntity.status(HttpStatus.CREATED).body(toResponse(truck));
     }
@@ -48,7 +47,7 @@ public class TruckController {
 
     @PutMapping("/{id}")
     public TruckResponse update(@PathVariable("id") Long id, @Valid @RequestBody TruckUpdateRequest request) {
-        Truck truck = truckService.updateTruck(id, request.getRegistrationNumber(), request.getCapacity(), request.getStatus());
+        Truck truck = truckService.updateTruck(id, request.getRegistrationNumber(), request.getCapacity());
         return toResponse(truck);
     }
 
@@ -63,8 +62,6 @@ public class TruckController {
                 truck.getTruckId(),
                 truck.getRegistrationNumber(),
                 truck.getCapacity(),
-                truck.getStatus()
-        );
+                truck.getStatus());
     }
 }
-
