@@ -1,38 +1,124 @@
-# Haulage Truck Management System (Spring Boot)
+# Haulage Management System
 
-CRUD for `Truck`, `Driver`, and `Job`, with job assignment + status transition business rules and JWT authentication.
+A full-stack web application for managing trucks, drivers, and jobs in a haulage business. Built with Spring Boot (backend) and React (frontend), featuring JWT authentication, PostgreSQL database, and Docker support.
 
-## Run with Docker (recommended)
+## Features
 
-1. Start the stack:
-   - `docker-compose up --build`
-2. API base URL:
-   - `http://localhost:8080`
-3. Swagger UI:
-   - `http://localhost:8080/swagger-ui.html`
+- **User Authentication**: JWT-based login and registration
+- **Truck Management**: CRUD operations for trucks with status tracking
+- **Driver Management**: CRUD operations for drivers with active job constraints
+- **Job Management**: Create jobs, assign trucks and drivers, track status transitions
+- **Business Logic**: Automated status updates and validation rules
+- **RESTful API**: Comprehensive API with Swagger documentation
+- **Modern Frontend**: React application with routing and API integration
 
-Default PostgreSQL credentials (from `docker-compose.yml`):
-- DB: `haulage`
-- User: `haulage`
-- Password: `haulage`
+## Tech Stack
 
-JWT secret (from `docker-compose.yml`): `replace-me-with-a-long-random-secret`
+- **Backend**: Java 17, Spring Boot 3, Spring Security, JWT, Hibernate, PostgreSQL
+- **Frontend**: React 18, Vite, React Router, Axios
+- **Database**: PostgreSQL
+- **Containerization**: Docker & Docker Compose
+- **Build Tools**: Maven (backend), pnpm (frontend)
 
-## Run locally
+## Prerequisites
 
-Make sure PostgreSQL is available, then run the app (e.g. via your IDE).
+- Java 17 or higher
+- Node.js 18+ and pnpm
+- Docker and Docker Compose
+- Git
 
-Base datasource defaults (from `application.yml`):
-- URL: `jdbc:postgresql://localhost:5432/haulage`
-- User: `haulage`
-- Password: `haulage`
+## Project Structure
+
+```
+haulage-management-system/
+├── src/main/java/com/haulage/          # Spring Boot backend
+│   ├── config/                         # Configuration classes
+│   ├── controller/                     # REST controllers
+│   ├── domain/                         # JPA entities
+│   ├── dto/                            # Data transfer objects
+│   ├── repository/                     # JPA repositories
+│   ├── security/                       # Security configuration
+│   └── service/                        # Business logic
+├── src/main/resources/                 # Application properties
+├── Frontend/                           # React frontend
+│   ├── src/
+│   │   ├── components/                 # React components
+│   │   ├── pages/                      # Page components
+│   │   ├── services/                   # API services
+│   │   └── context/                    # React context
+│   ├── package.json
+│   └── vite.config.js
+├── docker-compose.yml                  # Docker services
+├── Dockerfile                          # Backend container
+└── pom.xml                             # Maven configuration
+```
+
+## Quick Start
+
+### 1. Clone the Repository
+
+```bash
+git clone https://github.com/your-username/haulage-management-system.git
+cd haulage-management-system
+```
+
+### 2. Run with Docker (Recommended)
+
+```bash
+# Build and start all services
+docker-compose up --build
+```
+
+This will start:
+- PostgreSQL database on port 5432
+- Spring Boot backend on port 8080
+- Access the app at `http://localhost:8080` (backend API)
+
+### 3. Run Frontend Locally
+
+```bash
+# Install dependencies
+cd Frontend
+pnpm install
+
+# Start development server
+pnpm dev
+```
+
+Frontend will be available at `http://localhost:3000`
+
+### 4. Run Backend Locally
+
+Ensure PostgreSQL is running locally, then:
+
+```bash
+# Build and run
+mvn spring-boot:run
+```
+
+Or run in your IDE.
+
+## API Documentation
+
+### Base URL
+- Local: `http://localhost:8080`
+- Docker: `http://localhost:8080`
+
+### Swagger UI
+- `http://localhost:8080/swagger-ui.html`
+
+### Authentication
+The API uses JWT tokens. Register/login to get a token, then include in requests:
+```
+Authorization: Bearer <your-jwt-token>
+```
 
 ## API Examples (curl)
 
 ### 1) Register
 
 ```bash
-curl -s -X POST "http://localhost:8080/api/auth/register" \
+curl -X POST "http://localhost:8080/api/auth/register" \
   -H "Content-Type: application/json" \
   -d '{
     "username": "demo",
@@ -51,19 +137,7 @@ curl -X POST "http://localhost:8080/api/auth/login" \
   }'
 ```
 
-Optional (Linux/macOS) if you have `jq` installed:
-
-```bash
-TOKEN=$(curl -s -X POST "http://localhost:8080/api/auth/login" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "username": "demo",
-    "password": "demo123456"
-  }' | jq -r .token)
-```
-
-Copy the `token` field from the JSON response and set:
-
+Set the token for subsequent requests:
 ```bash
 export AUTH="Authorization: Bearer <TOKEN>"
 ```
@@ -93,7 +167,7 @@ curl -X POST "http://localhost:8080/api/drivers" \
   }'
 ```
 
-### 5) Create a Job (assigns truck + driver)
+### 5) Create a Job
 
 ```bash
 curl -X POST "http://localhost:8080/api/jobs" \
@@ -108,34 +182,108 @@ curl -X POST "http://localhost:8080/api/jobs" \
   }'
 ```
 
-### 6) Update Job Status (and truck availability)
+### 6) Update Job Status
 
-Set job to `IN_TRANSIT` (truck becomes `IN_TRANSIT`):
-
+Set job to `IN_TRANSIT`:
 ```bash
 curl -X PATCH "http://localhost:8080/api/jobs/1/status" \
   -H "Content-Type: application/json" \
   -H "$AUTH" \
-  -d '{
-    "status": "IN_TRANSIT"
-  }'
+  -d '{"status": "IN_TRANSIT"}'
 ```
 
-Set job to `DELIVERED` (truck becomes `AVAILABLE`):
-
+Set job to `DELIVERED`:
 ```bash
 curl -X PATCH "http://localhost:8080/api/jobs/1/status" \
   -H "Content-Type: application/json" \
   -H "$AUTH" \
-  -d '{
-    "status": "DELIVERED"
-  }'
+  -d '{"status": "DELIVERED"}'
 ```
 
-## Status rules (business logic)
+## Business Rules
 
-- A `Truck` can only be assigned to a new job when its status is `AVAILABLE`.
-- A `Driver` can only have one active job at a time (`PENDING`, `ASSIGNED`, `IN_TRANSIT`).
-- When a job becomes `IN_TRANSIT`, the assigned truck becomes `IN_TRANSIT`.
-- When a job becomes `DELIVERED` or `CANCELLED`, the assigned truck becomes `AVAILABLE`.
+- **Truck Assignment**: Trucks must be `AVAILABLE` to be assigned to jobs
+- **Driver Constraints**: Drivers can only have one active job at a time
+- **Status Transitions**:
+  - Job `IN_TRANSIT` → Truck `IN_TRANSIT`
+  - Job `DELIVERED`/`CANCELLED` → Truck `AVAILABLE`
+
+## Configuration
+
+### Database
+Default credentials (Docker):
+- Database: `haulage`
+- Username: `haulage`
+- Password: `haulage`
+- Port: `5432`
+
+### JWT
+- Secret: `replace-me-with-a-long-random-secret` (change in production)
+- Expiration: 1 hour
+
+## Development
+
+### Backend
+```bash
+# Run tests
+mvn test
+
+# Build JAR
+mvn clean package
+
+# Run with different profile
+mvn spring-boot:run -Dspring-boot.run.profiles=local
+```
+
+### Frontend
+```bash
+cd Frontend
+
+# Install dependencies
+pnpm install
+
+# Development server
+pnpm dev
+
+# Build for production
+pnpm build
+
+# Preview production build
+pnpm preview
+
+# Lint code
+pnpm lint
+```
+
+## Deployment
+
+### Docker Production
+```bash
+# Build and run
+docker-compose up --build -d
+
+# View logs
+docker-compose logs -f
+
+# Stop services
+docker-compose down
+```
+
+### Manual Deployment
+1. Build backend JAR
+2. Configure PostgreSQL
+3. Set environment variables
+4. Run JAR: `java -jar target/haulage-0.0.1-SNAPSHOT.jar`
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make changes
+4. Add tests
+5. Submit a pull request
+
+## License
+
+This project is licensed under the MIT License.
 
