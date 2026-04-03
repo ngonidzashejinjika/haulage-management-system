@@ -58,7 +58,7 @@ haulage-management-system/
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/your-username/haulage-management-system.git
+git clone https://github.com/ngonidzashejinjika/haulage-management-system.git
 cd haulage-management-system
 ```
 
