@@ -20,8 +20,7 @@ public class JwtService {
 
     public JwtService(
             @Value("${jwt.secret:default-secret-change-this-to-a-long-random-string-32bytes-minimum}") String secret,
-            @Value("${jwt.expiration-ms:3600000}") long expirationMs
-    ) {
+            @Value("${jwt.expiration-ms:3600000}") long expirationMs) {
         this.signingKey = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
         this.expirationMs = expirationMs;
     }
@@ -67,4 +66,3 @@ public class JwtService {
         return expiration.before(new Date());
     }
 }
-
