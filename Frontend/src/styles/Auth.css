@@ -75,9 +75,9 @@
     box-shadow: 0 0 0 3px rgba(100, 108, 255, 0.1);
 }
 
-.form-group input:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
+.form-group input::placeholder {
+    color: #888;
+    font-style: italic;
 }
 
 .auth-card button {
